@@ -17,8 +17,8 @@ LIGHTBLUE = (153, 222, 247)
 GREEN = (0, 255,0)
 
 # pics for the ball and bricks
-ball_img = pygame.image.load("ball.png")
-brick_img = pygame.image.load("brick.png")
+ball_img = pygame.image.load("assets/ball.png")
+brick_img = pygame.image.load("assets/brick.png")
 
 # scale the images 
 brick_width, brick_height = 25, 25 # brick size
