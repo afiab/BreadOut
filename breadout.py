@@ -54,6 +54,7 @@ for row in range(brick_rows):
 # state variables
 running = True
 game_over = False
+game_started = False # see if game started yet
 clock = pygame.time.Clock()
 
 # reset game state
@@ -83,62 +84,73 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN and game_over:
-            if event.key == pygame.K_SPACE:
-                reset_game()  # Reset game if space is pressed
+        # start game when space is pressed and game hasn't started yet
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE and not game_started:
+                game_started = True  # start game
+            elif event.key == pygame.K_SPACE and game_over:
+                reset_game()  # reset if space pressed when game over
 
-    # paddle movement
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT] and paddle_x > 0:
-        paddle_x -= paddle_speed
-    if keys[pygame.K_RIGHT] and paddle_x < width - paddle_width:
-        paddle_x += paddle_speed
+    # Display the starting screen before the game starts
+    if not game_started:
+        font = pygame.font.SysFont(None, 36)
+        text = font.render("Press SPACE to Play", True, BLACK)
+        text1 = font.render("Use Arrow Keys to Move", True, BLACK)
+        screen.blit(text1, (width // 2 - text.get_width() // 2, height // 2))
+        screen.blit(text, (width // 2 - text.get_width() // 2, height // 2-text.get_height()))
+    else:
+        # paddle movement
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and paddle_x > 0:
+            paddle_x -= paddle_speed
+        if keys[pygame.K_RIGHT] and paddle_x < width - paddle_width:
+            paddle_x += paddle_speed
     
-    # only move ball and check collisions if game is not over
-    if not game_over:
-        # ball movement
-        ball_x += ball_dx
-        ball_y += ball_dy
+        # only move ball and check collisions if game is not over
+        if not game_over:
+            # ball movement
+            ball_x += ball_dx
+            ball_y += ball_dy
 
-        # ball collision with walls
-        if ball_x - ball_radius < 0 or ball_x + ball_radius > width:
-            ball_dx *= -1
-        if ball_y - ball_radius < 0:
-            ball_dy *= -1
+            # ball collision with walls
+            if ball_x - ball_radius < 0 or ball_x + ball_radius > width:
+                ball_dx *= -1
+            if ball_y - ball_radius < 0:
+                ball_dy *= -1
 
-        # ball collision with paddle
-        paddle_rect = pygame.Rect(paddle_x, paddle_y, paddle_width, paddle_height)
-        if paddle_rect.collidepoint(ball_x, ball_y + ball_radius):
-            ball_dy *= -1
+            # ball collision with paddle
+            paddle_rect = pygame.Rect(paddle_x, paddle_y, paddle_width, paddle_height)
+            if paddle_rect.collidepoint(ball_x, ball_y + ball_radius):
+                ball_dy *= -1
 
-        # ball collision with bricks
+            # ball collision with bricks
+            for row in bricks:
+                for brick in row:
+                    if brick.collidepoint(ball_x, ball_y):
+                        ball_dy *= -1
+                        row.remove(brick)
+                        break
+
+            # game over (ball hits bottom)
+            if ball_y + ball_radius > height:
+                game_over = True  # Set game over to true
+
+        # draw paddle
+        pygame.draw.rect(screen, GREEN, paddle_rect)
+
+        # draw ball with PNG
+        screen.blit(ball_img, (ball_x - ball_radius, ball_y - ball_radius))
+
+        # draw bricks with PNG
         for row in bricks:
             for brick in row:
-                if brick.collidepoint(ball_x, ball_y):
-                    ball_dy *= -1
-                    row.remove(brick)
-                    break
+                screen.blit(brick_img, (brick.x, brick.y))
 
-        # game over (ball hits bottom)
-        if ball_y + ball_radius > height:
-            game_over = True  # Set game over to true
-
-    # draw paddle
-    pygame.draw.rect(screen, GREEN, paddle_rect)
-
-    # draw ball with PNG
-    screen.blit(ball_img, (ball_x - ball_radius, ball_y - ball_radius))
-
-    # draw bricks with PNG
-    for row in bricks:
-        for brick in row:
-            screen.blit(brick_img, (brick.x, brick.y))
-
-    # game over msg
-    if game_over:
-        font = pygame.font.SysFont(None, 36)
-        text = font.render("Game Over! Press SPACE to Restart", True, RED)
-        screen.blit(text, (width // 2 - text.get_width() // 2, height // 2))
+        # game over msg
+        if game_over:
+            font = pygame.font.SysFont(None, 36)
+            text = font.render("Game Over! Press SPACE to Restart", True, RED)
+            screen.blit(text, (width // 2 - text.get_width() // 2, height // 2))
 
     # Update the display
     pygame.display.flip()
